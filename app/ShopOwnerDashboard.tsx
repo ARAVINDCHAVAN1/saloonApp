@@ -1,48 +1,64 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createDrawerNavigator } from "@react-navigation/drawer";
+import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { Text, View } from "react-native";
-import { colors, commonStyles } from "../styles/theme";
 
-import DeleteAccountScreen from "./ShopOwnerDelete";
-import ProfileScreen from "./ShopOwnerProfile";
+import { colors } from "../styles/theme";
+import ShopOwnerGallery from "./ShopOwnerGallery";
+import ShopOwnerHeader from "./ShopOwnerHeader";
+import ShopOwnerHome from "./ShopOwnerHome";
+import ShopOwnerProfile from "./ShopOwnerProfile";
+import ShopOwnerServicesTabs from "./ShopOwnerServicesTabs";
+import ShopOwnerStaffTabs from "./ShopOwnerStaffTabs";
+
+
 
 const Drawer = createDrawerNavigator();
 
-function HomeScreen() {
-  const [ownerName, setOwnerName] = useState<string>("");
+export default function ShopOwnerDashboard() {
+  const router = useRouter();
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    const loadName = async () => {
-      const name = await AsyncStorage.getItem("shopOwnerName");
-      setOwnerName(name || "Shop Owner");
+    const checkLogin = async () => {
+      const sid = await AsyncStorage.getItem("shopId");
+      if (!sid) {
+        // 👈 If no session, redirect to login
+        router.replace("/ShopOwnerLoginScreen");
+      }
+      setIsChecking(false);
     };
-    loadName();
+    checkLogin();
   }, []);
 
-  return (
-    <View style={commonStyles.container}>
-      <Text style={commonStyles.title}>👋 Welcome, {ownerName}</Text>
-      <Text style={commonStyles.subtitle}>
-        This is your Shop Owner Dashboard
-      </Text>
-    </View>
-  );
-}
+  if (isChecking) {
+    // ✅ Show splash loader instead of null
+    return (
+      <></>
+    );
+  }
 
-export default function ShopOwnerDashboard() {
   return (
     <Drawer.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: colors.primary },
-        headerTintColor: "#fff",
+        header: () => <ShopOwnerHeader />, // 👈 custom header with logout
         drawerActiveTintColor: colors.primary,
         drawerLabelStyle: { fontSize: 16 },
       }}
     >
-      <Drawer.Screen name="Home" component={HomeScreen} />
-      <Drawer.Screen name="Profile" component={ProfileScreen} />
-      <Drawer.Screen name="Delete Account" component={DeleteAccountScreen} />
+      {/* ✅ Home Page stays when logged in */}
+       <Drawer.Screen name="Home" component={ShopOwnerHome} />
+       <Drawer.Screen name="Profile" component={ShopOwnerProfile} />
+       <Drawer.Screen name="Staff" component={ShopOwnerStaffTabs} />
+       <Drawer.Screen name="Services" component={ShopOwnerServicesTabs} />
+       <Drawer.Screen name="Gallery" component={ShopOwnerGallery} />
+
+
+
+  
+  
     </Drawer.Navigator>
+
+
   );
 }

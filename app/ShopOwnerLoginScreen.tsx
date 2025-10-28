@@ -2,17 +2,29 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { collection, getDocs } from "firebase/firestore";
 import React, { useState } from "react";
-import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  Image,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity
+} from "react-native";
 import { db } from "../firebaseConfig";
-import { commonStyles } from "../styles/theme";
+import { colors, commonStyles, images, layout } from "../styles/theme";
 
 export default function ShopOwnerLoginScreen() {
   const [input, setInput] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
   const router = useRouter();
 
   const handleLogin = async () => {
-    if (!input) {
-      Alert.alert("⚠️ Please enter Shop Name, Email, or Phone");
+    if (!input.trim()) {
+      Alert.alert("⚠️ Missing Field", "Please enter Shop Name, Email, or Phone");
+      return;
+    }
+    if (!password.trim()) {
+      Alert.alert("⚠️ Missing Field", "Please enter your password");
       return;
     }
 
@@ -21,51 +33,76 @@ export default function ShopOwnerLoginScreen() {
     try {
       const snapshot = await getDocs(collection(db, "salons"));
 
-      let salon: any = null;
-
-      snapshot.forEach((doc) => {
+      // Find matching salon by shopName, email, or phone
+      const matchedDoc = snapshot.docs.find((doc) => {
         const data = doc.data();
         const shopName = (data.shopName || "").trim().toLowerCase();
         const email = (data.email || "").trim().toLowerCase();
         const phone = (data.phone || "").trim().toLowerCase();
 
-        if (shopName === cleanInput || email === cleanInput || phone === cleanInput) {
-          salon = data;
-        }
+        return (
+          shopName === cleanInput ||
+          email === cleanInput ||
+          phone === cleanInput
+        );
       });
 
-      if (salon) {
-        const status = (salon.status || "").trim().toLowerCase();
-
-        if (status === "approved") {
-          await AsyncStorage.setItem("shopOwnerName", salon.ownerName || "");
-          await AsyncStorage.setItem("shopId", salon.shopName || "");
-
-          Alert.alert("✅ Login successful! Redirecting...");
-          router.push("/ShopOwnerDashboard");
-        } else if (status === "pending") {
-          Alert.alert("⏳ Your registration is still pending admin approval.");
-        } else if (status === "rejected") {
-          Alert.alert("❌ Your registration was rejected by the admin.");
-        } else {
-          Alert.alert("⚠️ Unknown status. Please contact support.");
-        }
-      } else {
-        Alert.alert("❌ No record found. Please register first.");
+      if (!matchedDoc) {
+        Alert.alert("❌ Not Found", "No record found. Please register first.");
+        return;
       }
+
+      const salon = matchedDoc.data();
+      const salonDocId = matchedDoc.id;
+
+      // ✅ Check status
+      const status = (salon.status || "").trim().toLowerCase();
+      if (status === "pending") {
+        Alert.alert("⏳ Pending", "Your registration is pending admin approval.");
+        return;
+      }
+      if (status === "rejected") {
+        Alert.alert("❌ Rejected", "Your registration was rejected.");
+        return;
+      }
+      if (status !== "approved") {
+        Alert.alert("⚠️ Unknown Status", "Please contact support.");
+        return;
+      }
+
+      // ✅ Check password
+      if ((salon.password || "") !== password) {
+        Alert.alert("❌ Invalid Password", "The password you entered is incorrect.");
+        return;
+      }
+
+      // ✅ Save session details
+      await AsyncStorage.setItem("shopId", salonDocId);
+      await AsyncStorage.setItem("shopName", salon.shopName || "");
+      await AsyncStorage.setItem("shopOwnerName", salon.ownerName || "");
+      await AsyncStorage.setItem("shopEmail", salon.email || "");
+      await AsyncStorage.setItem("shopPhone", salon.phone || "");
+
+      Alert.alert("✅ Login successful!");
+
+      // ✅ Navigate to Dashboard and replace history so user can't go back
+      router.replace("/ShopOwnerDashboard");
     } catch (error) {
       console.error("Login error:", error);
-      Alert.alert("❌ Login failed. Try again.");
+      Alert.alert("❌ Login Failed", "Something went wrong. Please try again.");
     }
   };
 
   return (
-    <View style={commonStyles.container}>
-      <Text style={commonStyles.title}>🔑 Shop Owner Login</Text>
-      <Text style={commonStyles.subtitle}>
-        Enter Shop Name, Email, or Phone to continue
-      </Text>
+    <ScrollView contentContainerStyle={commonStyles.scrollContainer}>
+      {/* Logo */}
+      {/* ✅ moved resizeMode here instead of styles */}
+      <Image source={images.logo} style={layout.logo} resizeMode="contain" />
 
+      {/* Title */}
+      <Text style={commonStyles.title}>🔑 Shop Owner Login</Text>
+
+      {/* Username input */}
       <TextInput
         placeholder="Shop Name / Email / Phone"
         value={input}
@@ -74,16 +111,29 @@ export default function ShopOwnerLoginScreen() {
         autoCapitalize="none"
       />
 
+      {/* Password input */}
+      <TextInput
+        placeholder="Password"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+        style={commonStyles.input}
+      />
+
+      {/* Login button */}
       <TouchableOpacity style={commonStyles.button} onPress={handleLogin}>
         <Text style={commonStyles.buttonText}>Login</Text>
       </TouchableOpacity>
 
+      {/* Register link */}
       <TouchableOpacity
-        style={commonStyles.backButton}
-        onPress={() => router.back()}
+        style={{ marginTop: 20 }}
+        onPress={() => router.push("/shop-owner-register")}
       >
-        <Text style={commonStyles.backText}>⬅ Back</Text>
+        <Text style={{ color: colors.primary, fontSize: 16 }}>
+          New here? Register from the home screen.
+        </Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
