@@ -3,13 +3,13 @@ import * as ImagePicker from "expo-image-picker";
 import { addDoc, collection } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
-    Alert,
-    Image,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Image,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { db } from "../firebaseConfig";
 import { uploadToCloudinary } from "../utils/uploadToCloudinary";
@@ -23,6 +23,7 @@ export default function AddStaff() {
   const [salonId, setSalonId] = useState("");
   const [newName, setNewName] = useState("");
   const [newExp, setNewExp] = useState("");
+  const [newPassword, setNewPassword] = useState("");   // ✅ New state for password
   const [newCategory, setNewCategory] = useState("Men");
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -54,8 +55,8 @@ export default function AddStaff() {
   };
 
   const addBarber = async () => {
-    if (!newName || !newExp) {
-      return Alert.alert("⚠️ Error", "Please fill all staff fields.");
+    if (!newName || !newExp || !newPassword) {
+      return Alert.alert("⚠️ Error", "Please fill all staff fields including password.");
     }
 
     try {
@@ -70,6 +71,7 @@ export default function AddStaff() {
         name: newName,
         experience: newExp,
         specialization: newCategory,
+        password: newPassword,   // ✅ Save password
         photoUrl,
         createdAt: new Date().toISOString(),
       });
@@ -77,6 +79,7 @@ export default function AddStaff() {
       Alert.alert("✅ Success", "Staff added successfully.");
       setNewName("");
       setNewExp("");
+      setNewPassword("");   // ✅ Clear password after submit
       setNewCategory("Men");
       setImageUri(null);
     } catch (e: any) {
@@ -103,6 +106,15 @@ export default function AddStaff() {
         style={addStaffStyles.inputField}
         value={newExp}
         onChangeText={setNewExp}
+      />
+
+      {/* ✅ Password Field */}
+      <TextInput
+        placeholder="Set Password"
+        style={addStaffStyles.inputField}
+        secureTextEntry
+        value={newPassword}
+        onChangeText={setNewPassword}
       />
 
       {/* Category Section */}

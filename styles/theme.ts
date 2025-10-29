@@ -500,6 +500,118 @@ export const serviceStyles = StyleSheet.create({
     fontWeight: "700",
   },
 });
+// 👤 User Login styles
+export const loginStyles = {
+
+
+
+  
+  container: {
+    flex: 1,
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+    backgroundColor: colors.background,
+    padding: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold" as const,
+    marginBottom: 10,
+    color: colors.textDark,
+  },
+  subtitle: {
+    fontSize: 16,
+    marginBottom: 20,
+    color: colors.textLight,
+    textAlign: "center" as const,
+  },
+  button: {
+    backgroundColor: colors.primary,
+    padding: 15,
+    borderRadius: 10,
+    width: "80%",
+    alignItems: "center" as const,
+    marginBottom: 20,
+  },
+  buttonText: {
+    color: colors.background,
+    fontSize: 18,
+    fontWeight: "600" as const,
+  },
+  backButton: {
+    marginTop: 10,
+  },
+  backText: {
+    fontSize: 16,
+    color: colors.primary,
+  },
+};
+// 🔲 Popup / Modal Styles
+export const popupStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+cancelText: {
+  fontSize: 16,
+  fontWeight: "600",
+  color: "red",
+  borderWidth: 1,
+  borderColor: "red",
+  borderRadius: 6,
+  paddingVertical: 6,
+  paddingHorizontal: 12,
+  textAlign: "center",
+},
+
+
+
+  popup: {
+    width: "80%",
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 12,
+    alignItems: "center",
+    elevation: 5,
+  },
+  popupTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 15,
+    color: "#000",
+  },
+  optionBtn: {
+    backgroundColor: colors.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginVertical: 6,
+    width: "100%",
+    alignItems: "center",
+  },
+  optionText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#000",
+  },
+ cancelText: {
+  fontSize: 16,
+  fontWeight: "600",
+  color: "red",
+  borderWidth: 1,
+  borderColor: "red",
+  borderRadius: 6,
+  paddingVertical: 6,
+  paddingHorizontal: 12,
+  textAlign: "center",
+},
+
+  
+});
+
+
 
 // 🖼 Images
 export const images = {

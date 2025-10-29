@@ -10,10 +10,13 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Icon from "react-native-vector-icons/MaterialCommunityIcons"; // 👈 install if not already
 import { db } from "../firebaseConfig";
-import { staffEditStyles } from "../styles/theme"; // ✅ import theme styles
+import { staffEditStyles } from "../styles/theme";
 import { uploadToCloudinary } from "../utils/uploadToCloudinary";
+
 import Header from "./ShopOwnerHeader";
+
 
 const CATEGORIES = ["Men", "Women", "Spa"];
 
@@ -23,6 +26,7 @@ export default function StaffEdit() {
   const [staff, setStaff] = useState<any>(null);
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // 👈 toggle state
 
   // ✅ Load staff details
   useEffect(() => {
@@ -70,6 +74,7 @@ export default function StaffEdit() {
         name: staff.name,
         experience: staff.experience,
         specialization: staff.specialization,
+        password: staff.password, // ✅ updated password
         photoUrl,
       });
 
@@ -114,6 +119,27 @@ export default function StaffEdit() {
           placeholder="Experience"
           style={staffEditStyles.input}
         />
+
+        {/* ✅ Password + Show/Hide */}
+        <View style={{ position: "relative", width: "100%" }}>
+          <TextInput
+            value={staff.password}
+            onChangeText={(t) => setStaff({ ...staff, password: t })}
+            placeholder="Password"
+            secureTextEntry={!showPassword}
+            style={[staffEditStyles.input, { paddingRight: 40 }]} // add padding for icon
+          />
+          <TouchableOpacity
+            onPress={() => setShowPassword(!showPassword)}
+            style={{ position: "absolute", right: 10, top: 18 }}
+          >
+            <Icon
+              name={showPassword ? "eye-off" : "eye"}
+              size={22}
+              color="#777"
+            />
+          </TouchableOpacity>
+      </View>
 
         {/* Category */}
         <View style={staffEditStyles.chipContainer}>

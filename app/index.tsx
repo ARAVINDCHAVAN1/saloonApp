@@ -15,7 +15,7 @@ export default function RoleSelectScreen() {
       {/* Buttons */}
       <TouchableOpacity
         style={buttons.primary}
-        onPress={() => router.push("/user-login")}
+        onPress={() => router.push("/customer-login")}
       >
         <Text style={fonts.buttonText}>👤 User</Text>
       </TouchableOpacity>

@@ -135,7 +135,7 @@ export default function ShopOwnerRegisterScreen() {
         <Text style={commonStyles.buttonText}>Submit</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={{ marginTop: 20 }} onPress={() => router.push("/ShopOwnerLoginScreen")}>
+      <TouchableOpacity style={{ marginTop: 20 }} onPress={() => router.push("/Selectcustomerorbarbar")}>
         <Text style={{ color: colors.primary, fontSize: 16 }}>
           🔑 Already registered? Click here to Login
         </Text>
