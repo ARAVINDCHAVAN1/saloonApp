@@ -1,83 +1,225 @@
-import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Stack, useRouter } from "expo-router";
 import {
-    Alert,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  addDoc,
+  collection,
+  doc,
+  getDocs,
+  query,
+  serverTimestamp,
+  updateDoc,
+  where,
+} from "firebase/firestore";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
-import { loginStyles } from "../styles/theme";
+import { db } from "../firebaseConfig";
+import { commonStyles } from "../styles/theme";
 
-export default function CustomerHome() {
+export default function CustomerLogin() {
   const router = useRouter();
+  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
-  const [generatedOtp, setGeneratedOtp] = useState<string | null>(null);
+  const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
+  const [showOtp, setShowOtp] = useState(false);
+  const [generatedOtp, setGeneratedOtp] = useState("");
+  const inputRefs = Array.from({ length: 6 }, () => useRef<any>());
 
-  // Generate and show OTP in console
-  const sendOtp = () => {
-    if (phone.length < 10) {
-      Alert.alert("❌ Invalid Phone", "Please enter a valid phone number");
-      return;
+  // ✅ Skip login if already logged in
+  useEffect(() => {
+    const checkLogin = async () => {
+      const loggedIn = await AsyncStorage.getItem("isLoggedIn");
+      if (loggedIn === "true") {
+        router.replace("/customer");
+      }
+    };
+    checkLogin();
+  }, []);
+
+  // ✅ Save or update Firestore data
+  const saveCustomerToFirestore = async (email: string, phone: string, otp: string) => {
+    try {
+      const customersRef = collection(db, "customers");
+      const existing = await getDocs(query(customersRef, where("phone", "==", phone)));
+
+      if (!existing.empty) {
+        const docSnap = existing.docs[0];
+        await updateDoc(doc(customersRef, docSnap.id), {
+          otp,
+          email,
+          phone,
+          updatedAt: serverTimestamp(),
+        });
+        return docSnap.id;
+      } else {
+        const newDoc = await addDoc(customersRef, {
+          email,
+          phone,
+          otp,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        return newDoc.id;
+      }
+    } catch (error) {
+      console.error("❌ Error saving customer:", error);
+      Alert.alert("Error", "Failed to save customer data.");
+      return null;
     }
-    const otpCode = Math.floor(1000 + Math.random() * 9000).toString(); // 4-digit OTP
-    setGeneratedOtp(otpCode);
-    console.log("📲 OTP for", phone, "is:", otpCode);
-    Alert.alert("✅ OTP Sent", "Check console for demo OTP");
   };
 
-  // Verify OTP
-  const verifyOtp = () => {
-    if (otp === generatedOtp) {
-      Alert.alert("🎉 Success", "Login successful!");
-      router.push("/customer-dashboard");
-    } else {
-      Alert.alert("❌ Error", "Invalid OTP, please try again");
+  // ✅ Get OTP
+  const handleGetOtp = async () => {
+    if (!email.trim() || !phone.trim()) {
+      Alert.alert("⚠️ Missing Details", "Please enter both email and phone number.");
+      return;
     }
+    if (phone.length !== 10) {
+      Alert.alert("⚠️ Invalid Phone", "Please enter a valid 10-digit phone number.");
+      return;
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedOtp(otp);
+    setShowOtp(true);
+    await saveCustomerToFirestore(email, phone, otp);
+    Alert.alert("📩 OTP Sent", `Demo OTP: ${otp}`);
+  };
+
+  // ✅ Verify OTP
+  const verifyOtp = async () => {
+    const otp = otpDigits.join("");
+    if (otp === generatedOtp) {
+      const customerId = await saveCustomerToFirestore(email, phone, generatedOtp);
+      if (customerId) {
+        const payload = { id: customerId, email, phone };
+        await AsyncStorage.setItem("customer", JSON.stringify(payload));
+        await AsyncStorage.setItem("isLoggedIn", "true"); // ✅ Save session
+        router.replace("/customer");
+      } else Alert.alert("Error", "Could not save customer. Try again.");
+    } else Alert.alert("❌ Invalid OTP", "Please enter the correct OTP.");
   };
 
   return (
-    <View style={loginStyles.container}>
-      <Text style={loginStyles.title}>📱 Customer Login</Text>
-      <Text style={loginStyles.subtitle}>Enter your phone number to continue</Text>
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
 
-      {/* Phone Number */}
-      <TextInput
-        style={loginStyles.input}
-        placeholder="Enter phone number"
-        keyboardType="phone-pad"
-        value={phone}
-        onChangeText={setPhone}
-      />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={{ flex: 1 }}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView contentContainerStyle={commonStyles.scrollContainer}>
+            <Text style={commonStyles.title}>📱 Customer Login</Text>
 
-      {/* Get OTP Button */}
-      <TouchableOpacity style={loginStyles.button} onPress={sendOtp}>
-        <Text style={loginStyles.buttonText}>Get OTP</Text>
-      </TouchableOpacity>
+            {!showOtp ? (
+              <>
+                <TextInput
+                  style={commonStyles.input}
+                  placeholder="Enter Email ID"
+                  placeholderTextColor="#999"
+                  keyboardType="email-address"
+                  value={email}
+                  onChangeText={setEmail}
+                />
+                <TextInput
+                  style={commonStyles.input}
+                  placeholder="Enter 10-digit phone number"
+                  placeholderTextColor="#999"
+                  keyboardType="phone-pad"
+                  value={phone}
+                  onChangeText={setPhone}
+                  maxLength={10}
+                />
+                <TouchableOpacity style={commonStyles.button} onPress={handleGetOtp}>
+                  <Text style={commonStyles.buttonText}>Get OTP</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Text
+                  style={{
+                    textAlign: "center",
+                    fontSize: 18,
+                    fontWeight: "600",
+                    marginTop: 25,
+                  }}
+                >
+                  Enter OTP
+                </Text>
 
-      {/* OTP Input */}
-      {generatedOtp && (
-        <>
-          <TextInput
-            style={loginStyles.input}
-            placeholder="Enter 4-digit OTP"
-            keyboardType="numeric"
-            maxLength={4}
-            value={otp}
-            onChangeText={setOtp}
-          />
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "center",
+                    marginVertical: 20,
+                  }}
+                >
+                  {otpDigits.map((digit, index) => (
+                    <TextInput
+                      key={index}
+                      ref={inputRefs[index]}
+                      style={{
+                        width: 45,
+                        height: 50,
+                        borderWidth: 1,
+                        borderColor: "#ccc",
+                        borderRadius: 10,
+                        textAlign: "center",
+                        fontSize: 20,
+                        color: "#000",
+                        backgroundColor: "#fff",
+                        marginHorizontal: 5,
+                        elevation: 2,
+                      }}
+                      keyboardType="numeric"
+                      maxLength={1}
+                      value={digit}
+                      onChangeText={(text) => {
+                        const newOtp = [...otpDigits];
+                        newOtp[index] = text;
+                        setOtpDigits(newOtp);
+                        if (text && index < 5) inputRefs[index + 1].current?.focus();
+                      }}
+                    />
+                  ))}
+                </View>
 
-          <TouchableOpacity style={loginStyles.button} onPress={verifyOtp}>
-            <Text style={loginStyles.buttonText}>Verify OTP</Text>
-          </TouchableOpacity>
-        </>
-      )}
+                <View
+                  style={{
+                    alignItems: "center",
+                    marginBottom: 20,
+                    backgroundColor: "#e8f4ff",
+                    paddingVertical: 10,
+                    borderRadius: 8,
+                    marginHorizontal: 60,
+                  }}
+                >
+                  <Text style={{ color: "#007aff", fontSize: 16, fontWeight: "bold" }}>
+                    Demo OTP: {generatedOtp}
+                  </Text>
+                </View>
 
-      {/* Back */}
-      <TouchableOpacity style={loginStyles.backButton} onPress={() => router.back()}>
-        <Text style={loginStyles.backText}>⬅ Back</Text>
-      </TouchableOpacity>
-    </View>
+                <TouchableOpacity style={commonStyles.button} onPress={verifyOtp}>
+                  <Text style={commonStyles.buttonText}>Verify OTP</Text>
+                </TouchableOpacity>
+              </>
+            )}
+
+          
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </>
   );
 }

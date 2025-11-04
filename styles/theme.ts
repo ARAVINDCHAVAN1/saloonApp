@@ -1,5 +1,6 @@
 // styles/theme.ts
-import { StyleSheet } from "react-native";
+import { Dimensions, StyleSheet } from "react-native";
+const { width } = Dimensions.get("window");
 
 // 🎨 Colors
 export const colors = {
@@ -611,6 +612,349 @@ cancelText: {
   
 });
 
+
+// 📌 Leaves Approval styles
+export const leavesApprovalStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+    padding: 16,
+  },
+  title: {
+    color: colors.primary,
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  card: {
+    backgroundColor: colors.cardBg,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  cardTitle: {
+    color: colors.primary,
+    fontWeight: "bold",
+  },
+  timeText: {
+    color: colors.textLight,
+  },
+  reason: {
+    color: colors.textDark,
+  },
+  status: {
+    marginTop: 4,
+    fontWeight: "600",
+  },
+  approveBtn: {
+    flex: 1,
+    backgroundColor: "lightgreen",
+    padding: 10,
+    borderRadius: 6,
+    marginRight: 5,
+    alignItems: "center",
+  },
+  rejectBtn: {
+    flex: 1,
+    backgroundColor: "red",
+    padding: 10,
+    borderRadius: 6,
+    marginLeft: 5,
+    alignItems: "center",
+  },
+  approveText: {
+    textAlign: "center",
+    color: "#000",
+    fontWeight: "bold",
+  },
+  rejectText: {
+    textAlign: "center",
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  actionRow: {
+    flexDirection: "row",
+    marginTop: 10,
+  },
+});
+
+export const customerDashboardStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.primary,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    borderBottomLeftRadius: 15,
+    borderBottomRightRadius: 15,
+    elevation: 5,
+  },
+  searchContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    height: 40,
+    fontSize: 16,
+    paddingHorizontal: 8,
+    color: "#000",
+  },
+  homeButton: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 8,
+    elevation: 2,
+  },
+  content: {
+    padding: 15,
+  },
+  welcomeText: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: colors.textPrimary,
+    marginBottom: 15,
+    textAlign: "center",
+  },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+    elevation: 2,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+  },
+  cardSubtitle: {
+    color: "#666",
+    marginTop: 5,
+  },
+});
+
+
+export const salonDetailsStyles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.light },
+
+  heroContainer: { position: "relative", height: 300 },
+  heroImage: { width: "100%", height: "100%" },
+  overlay: {
+    position: "absolute",
+    width: "100%",
+    height: "100%",
+    backgroundColor: "rgba(0,0,0,0.4)",
+  },
+  heroTextContainer: {
+    position: "absolute",
+    bottom: 40,
+    left: 20,
+    right: 20,
+  },
+  heroTitle: { color: "#fff", fontSize: 30, fontWeight: "700" },
+  heroSubtitle: { color: "#ddd", marginTop: 6, fontSize: 15, lineHeight: 20 },
+  bookButton: {
+    flexDirection: "row",
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 30,
+    marginTop: 14,
+    alignSelf: "flex-start",
+  },
+  bookButtonText: { color: "#fff", fontWeight: "600", marginLeft: 6 },
+
+  aboutCard: {
+    backgroundColor: "#fff",
+    margin: 16,
+    borderRadius: 12,
+    padding: 16,
+    elevation: 2,
+  },
+  aboutTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: colors.primary,
+    textAlign: "center",
+    textTransform: "uppercase",
+    marginBottom: 10,
+  },
+  aboutText: { color: "#555", fontSize: 15, lineHeight: 20, textAlign: "justify" },
+
+  section: { marginHorizontal: 16, marginBottom: 16 },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: colors.primary,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.primary,
+    paddingLeft: 10,
+    textShadowColor: "rgba(0,0,0,0.1)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+
+  // Gallery
+  galleryImage: {
+    width: width / 1.6,
+    height: 160,
+    borderRadius: 10,
+    marginRight: 10,
+  },
+
+  // ✨ Menu Card (Modern Style)
+  menuCardContainer: {
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    padding: 10,
+    elevation: 4,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: "#eee",
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 1, height: 3 },
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  menuCardImage: {
+    width: width / 1.3,
+    height: 300,
+    borderRadius: 10,
+  },
+  menuCardPlaceholder: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    paddingVertical: 30,
+    alignItems: "center",
+    elevation: 2,
+  },
+  menuCardPlaceholderText: {
+    color: "#999",
+    marginTop: 10,
+    fontSize: 14,
+  },
+
+  barberGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  barberCard: {
+    backgroundColor: "#fff",
+    width: "48%",
+    alignItems: "center",
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+    elevation: 2,
+  },
+  barberImg: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    marginBottom: 8,
+    backgroundColor: "#eee",
+  },
+barberProfileCard: {
+  width: "48%",
+  borderRadius: 16,
+  marginBottom: 16,
+  elevation: 4,
+  shadowColor: "#000",
+  shadowOpacity: 0.1,
+  shadowRadius: 5,
+  shadowOffset: { width: 1, height: 3 },
+},
+barberGradient: {
+  borderRadius: 16,
+  paddingVertical: 18,
+  alignItems: "center",
+  justifyContent: "center",
+},
+
+
+barberProfileImg: {
+  width: 90,
+  height: 90,
+  borderRadius: 45,
+  marginBottom: 10,
+  backgroundColor: "#eee",
+},
+barberInfo: {
+  alignItems: "center",
+},
+
+barberProfileName: {
+  fontSize: 16,
+  fontWeight: "700",
+  color: "#222",
+  marginBottom: 6,
+},
+barberProfileExp: {
+  fontSize: 13,
+  color: "#555",
+  marginTop: 4,
+},
+
+barberChip: {
+  backgroundColor: "#eaf7ff",
+  paddingHorizontal: 10,
+  paddingVertical: 4,
+  borderRadius: 14,
+  marginHorizontal: 4,
+  fontSize: 12,
+  color: "#005f8f",
+  fontWeight: "600",
+},
+
+  barberName: { fontSize: 15, fontWeight: "600", color: "#222" },
+  barberExp: { fontSize: 13, color: "#777", marginTop: 2 },
+
+  serviceCard: {
+    backgroundColor: "#fff",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 8,
+    elevation: 1,
+  },
+  serviceName: { fontSize: 15, color: "#333" },
+  servicePrice: { fontSize: 15, fontWeight: "700", color: colors.primary },
+  emptyText: { textAlign: "center", color: "#777", marginVertical: 10 },
+
+  bottomBookNow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colors.primary,
+    marginHorizontal: 16,
+    marginBottom: 30,
+    borderRadius: 25,
+    paddingVertical: 14,
+    elevation: 3,
+  },
+  bottomBookText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 16,
+    marginLeft: 8,
+  },
+});
 
 
 // 🖼 Images

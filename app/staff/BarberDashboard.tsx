@@ -1,8 +1,9 @@
+// app/staff/BarberDashboard.tsx
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { dashboardStyles } from "../../styles/theme";
+import { colors, dashboardStyles } from "../../styles/theme";
 import BarberHeader from "./BarberHeader";
 
 export default function BarberDashboard() {
@@ -10,6 +11,7 @@ export default function BarberDashboard() {
   const [barberName, setBarberName] = useState("");
   const [salonName, setSalonName] = useState("");
 
+  // 🔹 Load barber session data
   useEffect(() => {
     const load = async () => {
       try {
@@ -31,52 +33,69 @@ export default function BarberDashboard() {
   }, []);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#000" }}>
-      {/* ✅ Custom Header */}
-      <BarberHeader barberName={barberName} />
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* ✅ Top Header */}
+      <BarberHeader />
 
-      <ScrollView contentContainerStyle={{  }}>
-        
+      {/* ✅ Dashboard Content */}
+      <ScrollView
+        contentContainerStyle={{
+          paddingVertical: 20,
+          paddingHorizontal: 16,
+        }}
+      >
+   
 
-        {/* Dashboard Cards */}
-        <TouchableOpacity
-          style={dashboardStyles.card}
-          onPress={() => router.push("/staff/Services")}
-        >
-          <View style={dashboardStyles.iconBox}>
-            <Text>💇</Text>
-          </View>
-          <View style={dashboardStyles.textContainer}>
-            <Text style={dashboardStyles.cardTitle}>My Services</Text>
-            <Text style={dashboardStyles.cardValue}>Check assigned tasks</Text>
-          </View>
-        </TouchableOpacity>
-
+      
+        {/* --- My Appointments --- */}
         <TouchableOpacity
           style={dashboardStyles.card}
           onPress={() => router.push("/staff/Appointments")}
         >
           <View style={dashboardStyles.iconBox}>
-            <Text>📅</Text>
+            <Text style={{ fontSize: 22 }}>📅</Text>
           </View>
           <View style={dashboardStyles.textContainer}>
             <Text style={dashboardStyles.cardTitle}>My Appointments</Text>
-            <Text style={dashboardStyles.cardValue}>Upcoming bookings</Text>
+            <Text style={dashboardStyles.cardValue}>
+              Check your upcoming bookings
+            </Text>
           </View>
         </TouchableOpacity>
 
+        {/* --- My Profile --- */}
         <TouchableOpacity
           style={dashboardStyles.card}
-          onPress={() => router.push("/staff/Profile")}
+          onPress={() => router.push("/staff/BarberProfile")}
         >
           <View style={dashboardStyles.iconBox}>
-            <Text>👤</Text>
+            <Text style={{ fontSize: 22 }}>👤</Text>
           </View>
           <View style={dashboardStyles.textContainer}>
-            <Text style={dashboardStyles.cardTitle}>Profile</Text>
-            <Text style={dashboardStyles.cardValue}>Update details</Text>
+            <Text style={dashboardStyles.cardTitle}>My Profile</Text>
+            <Text style={dashboardStyles.cardValue}>
+              Edit your personal details
+            </Text>
           </View>
         </TouchableOpacity>
+
+        {/* --- My Slots --- */}
+        <TouchableOpacity
+          style={dashboardStyles.card}
+          onPress={() => router.push("/staff/MySlots")}
+        >
+          <View style={dashboardStyles.iconBox}>
+            <Text style={{ fontSize: 22 }}>🕒</Text>
+          </View>
+          <View style={dashboardStyles.textContainer}>
+            <Text style={dashboardStyles.cardTitle}>My Slots</Text>
+            <Text style={dashboardStyles.cardValue}>
+              View your assigned time slots
+            </Text>
+          </View>
+        </TouchableOpacity>
+
+      
       </ScrollView>
     </View>
   );

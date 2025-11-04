@@ -1,22 +1,13 @@
-import { Drawer } from "expo-router/drawer";
-import { colors } from "../../styles/theme";
-import ShopOwnerHeader from "../ShopOwnerHeader";
+import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import Toast from "react-native-toast-message";
 
-export default function ShopOwnerLayout() {
+export default function RootLayout() {
   return (
-    <Drawer
-      screenOptions={{
-        header: ({ route, navigation, options }) => {
-          return (
-            <ShopOwnerHeader
-              title={options.title || route.name}
-              navigation={navigation}
-            />
-          );
-        },
-        drawerActiveTintColor: colors.primary,
-        drawerLabelStyle: { fontSize: 16 },
-      }}
-    />
+    <>
+      <StatusBar style="dark" />
+      <Stack screenOptions={{ headerShown: false }} />
+      <Toast /> {/* ✅ Required for Toast.show() */}
+    </>
   );
 }
