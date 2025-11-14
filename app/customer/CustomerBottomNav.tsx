@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { usePathname, useRouter } from "expo-router";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
-import { colors } from "../../styles/theme";
+import { colors } from "../../styles/theme"; // ✅ Fixed import path
 
 export default function CustomerBottomNav() {
   const router = useRouter();
@@ -31,7 +31,7 @@ export default function CustomerBottomNav() {
         shadowRadius: 5,
       }}
     >
-      {/* Home */}
+      {/* 🏠 Home */}
       <TouchableOpacity
         onPress={() => router.push("/customer")}
         style={{
@@ -58,7 +58,7 @@ export default function CustomerBottomNav() {
         </Text>
       </TouchableOpacity>
 
-      {/* Bookings */}
+      {/* 📖 Bookings */}
       <TouchableOpacity
         onPress={() => router.push("/customer/booking-history")}
         style={{
@@ -89,7 +89,7 @@ export default function CustomerBottomNav() {
         </Text>
       </TouchableOpacity>
 
-      {/* Shop */}
+      {/* 🛍️ Shop */}
       <TouchableOpacity
         onPress={() => router.push("/customer/shop")}
         style={{
@@ -116,7 +116,7 @@ export default function CustomerBottomNav() {
         </Text>
       </TouchableOpacity>
 
-      {/* Profile */}
+      {/* 👤 Profile */}
       <TouchableOpacity
         onPress={() => router.push("/customer/profile")}
         style={{

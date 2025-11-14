@@ -1,22 +1,24 @@
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
 import { Stack, useRouter } from "expo-router";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Image,
-  Modal,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import { db } from "../../firebaseConfig";
+import { db } from "../../src/firebase/firebaseConfig";
 import { colors, customerDashboardStyles } from "../../styles/theme";
+
+// ✅ Local category images
+import menImg from "../assets/men.jpg";
+import spaImg from "../assets/spa.jpg";
+import womenImg from "../assets/women.jpg";
 
 type SalonInfo = {
   id: string;
@@ -24,16 +26,24 @@ type SalonInfo = {
   city?: string;
   state?: string;
   shopPic?: string;
+  category?: string;
 };
 
 export default function SalonList() {
   const [salons, setSalons] = useState<SalonInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [settingsVisible, setSettingsVisible] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const router = useRouter();
 
-  // 🔹 Auto-detect city on mount
+  // 🔹 Categories
+  const categories = [
+    { name: "Men", image: menImg },
+    { name: "Women", image: womenImg },
+    { name: "Spa", image: spaImg },
+  ];
+
+  // 🔹 Detect city on mount
   useEffect(() => {
     const fetchCity = async () => {
       try {
@@ -62,7 +72,7 @@ export default function SalonList() {
     fetchCity();
   }, []);
 
-  // 🔹 Load salons (filter by search)
+  // 🔹 Load salons
   useEffect(() => {
     const loadSalons = async () => {
       try {
@@ -74,14 +84,16 @@ export default function SalonList() {
           const data = docSnap.data();
           const salonId = docSnap.id;
 
-          // optional gallery image
+          // Fetch gallery data for category & image
           const galSnap = await getDocs(
             query(collection(db, "galleries"), where("salonId", "==", salonId))
           );
           let shopPic = "";
+          let category = "General";
           if (!galSnap.empty) {
             const g = galSnap.docs[0].data();
             shopPic = g.shopPic || "";
+            category = g.category || "General";
           }
 
           allSalons.push({
@@ -90,23 +102,33 @@ export default function SalonList() {
             city: data.city || "",
             state: data.state || "",
             shopPic,
+            category,
           });
         }
 
-        // 🔹 Case-insensitive filtering
+        // 🔹 Filter logic
         const queryText = (search || "").trim().toLowerCase();
-        const filtered = queryText
-          ? allSalons.filter((s) => {
-              const name = (s.shopName || "").toLowerCase();
-              const city = (s.city || "").toLowerCase();
-              const state = (s.state || "").toLowerCase();
-              return (
-                name.includes(queryText) ||
-                city.includes(queryText) ||
-                state.includes(queryText)
-              );
-            })
-          : allSalons;
+        let filtered = allSalons;
+
+        if (selectedCategory) {
+          filtered = filtered.filter(
+            (s) =>
+              s.category?.toLowerCase() === selectedCategory.toLowerCase()
+          );
+        }
+
+        if (queryText) {
+          filtered = filtered.filter((s) => {
+            const name = (s.shopName || "").toLowerCase();
+            const city = (s.city || "").toLowerCase();
+            const state = (s.state || "").toLowerCase();
+            return (
+              name.includes(queryText) ||
+              city.includes(queryText) ||
+              state.includes(queryText)
+            );
+          });
+        }
 
         setSalons(filtered);
       } catch (e) {
@@ -117,51 +139,31 @@ export default function SalonList() {
     };
 
     loadSalons();
-  }, [search]);
-
-  // 🔹 Logout
-  const handleLogout = async () => {
-    Alert.alert("Logout", "Are you sure you want to log out?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Logout",
-        style: "destructive",
-        onPress: async () => {
-          await AsyncStorage.removeItem("isLoggedIn");
-          await AsyncStorage.removeItem("customer");
-          Alert.alert("You have been logged out.");
-          router.replace("/CustomerLogin");
-        },
-      },
-    ]);
-  };
+  }, [search, selectedCategory]);
 
   // ---------------- UI -----------------
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      {/* ✅ Single Yellow Header (Search + Cart + Settings) */}
+      {/* ✅ Header (Search + Cart) */}
       <View
         style={{
-          flexDirection: "row",
-          alignItems: "center",
           backgroundColor: colors.primary,
-          paddingHorizontal: 15,
           paddingTop: 45,
-          paddingBottom: 12,
+          paddingBottom: 10,
+          paddingHorizontal: 15,
         }}
       >
-        {/* Search box */}
+        {/* 🔍 Search Box */}
         <View
           style={{
             flexDirection: "row",
             alignItems: "center",
             backgroundColor: "#fff",
             borderRadius: 8,
-            flex: 1,
-            marginRight: 10,
             paddingHorizontal: 10,
+            paddingVertical: 5,
           }}
         >
           <Ionicons name="search-outline" size={20} color="#000" />
@@ -170,83 +172,87 @@ export default function SalonList() {
             placeholderTextColor="#666"
             value={search}
             onChangeText={(text) => setSearch(text)}
-            style={{ flex: 1, color: "#000", marginLeft: 8 }}
+            style={{
+              flex: 1,
+              color: "#000",
+              marginLeft: 8,
+            }}
           />
+          <TouchableOpacity onPress={() => router.push("/customer/cart-empty")}>
+            <Ionicons name="cart-outline" size={24} color="#000" />
+          </TouchableOpacity>
         </View>
 
-        {/* Cart */}
-        <TouchableOpacity onPress={() => router.push("/customer/cart")}>
-          <Ionicons
-            name="cart-outline"
-            size={24}
-            color="#000"
-            style={{ marginRight: 15 }}
-          />
-        </TouchableOpacity>
-
-        {/* Settings */}
-        <TouchableOpacity onPress={() => setSettingsVisible(true)}>
-          <Ionicons name="settings-outline" size={24} color="#000" />
-        </TouchableOpacity>
-      </View>
-
-      {/* ⚙️ Settings Modal */}
-      <Modal
-        visible={settingsVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setSettingsVisible(false)}
-      >
-        <TouchableOpacity
-          activeOpacity={1}
-          onPressOut={() => setSettingsVisible(false)}
+        {/* 🔹 Centered Category Section with Yellow Background */}
+        <View
           style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            justifyContent: "center",
-            alignItems: "center",
+            marginTop: 12,
+            backgroundColor: colors.primary,
+            borderRadius: 10,
+            paddingVertical: 10,
           }}
         >
-          <View
-            style={{
-              backgroundColor: "#fff",
-              padding: 20,
-              width: 250,
-              borderRadius: 10,
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{
+              justifyContent: "center",
               alignItems: "center",
+              paddingHorizontal: 10,
             }}
           >
-            <TouchableOpacity
-              onPress={() => {
-                setSettingsVisible(false);
-                router.push("/customer/profile");
-              }}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginVertical: 10,
-              }}
-            >
-              <Ionicons name="person-outline" size={22} color={colors.primary} />
-              <Text style={{ marginLeft: 10, fontSize: 16 }}>Profile</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={handleLogout}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginVertical: 10,
-              }}
-            >
-              <Ionicons name="log-out-outline" size={22} color="red" />
-              <Text style={{ marginLeft: 10, fontSize: 16, color: "red" }}>
-                Logout
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+            {categories.map((cat) => {
+              const isActive = selectedCategory === cat.name;
+              return (
+                <TouchableOpacity
+                  key={cat.name}
+                  onPress={() =>
+                    setSelectedCategory(isActive ? null : cat.name)
+                  }
+                  style={{
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginHorizontal: 12,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 55,
+                      height: 55,
+                      borderRadius: 50,
+                      overflow: "hidden",
+                      borderWidth: 2,
+                      borderColor: isActive ? "#000" : "#fff",
+                      backgroundColor: "#fff",
+                    }}
+                  >
+                    <Image
+                      source={cat.image}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        opacity: isActive ? 1 : 0.9,
+                      }}
+                      resizeMode="cover"
+                    />
+                  </View>
+                  <Text
+                    style={{
+                      color: "#000",
+                      fontWeight: isActive ? "700" : "600",
+                      fontSize: 12,
+                      marginTop: 4,
+                      textAlign: "center",
+                    }}
+                  >
+                    {cat.name}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+      </View>
 
       {/* 🔹 Salon List */}
       {loading ? (
@@ -256,12 +262,21 @@ export default function SalonList() {
           style={{ marginTop: 30 }}
         />
       ) : salons.length === 0 ? (
-        <Text style={{ textAlign: "center", color: "#777", marginTop: 20 }}>
-          No salons found for “{search}”.
+        <Text
+          style={{
+            textAlign: "center",
+            color: "#777",
+            marginTop: 20,
+          }}
+        >
+          No salons found.
         </Text>
       ) : (
         <ScrollView
-          contentContainerStyle={[customerDashboardStyles.content, { paddingBottom: 90 }]}
+          contentContainerStyle={[
+            customerDashboardStyles.content,
+            { paddingBottom: 90 },
+          ]}
         >
           {salons.map((salon) => (
             <View

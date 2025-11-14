@@ -5,16 +5,16 @@ import { Picker } from "@react-native-picker/picker";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { db } from "../firebaseConfig";
-import { colors } from "../styles/theme";
+import { db } from "../../src/firebase/firebaseConfig";
+import { colors } from "../../styles/theme";
 
 export default function ShopOwnerBookings() {
   const [salonId, setSalonId] = useState<string | null>(null);

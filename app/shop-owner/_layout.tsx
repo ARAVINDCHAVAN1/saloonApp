@@ -1,13 +1,13 @@
+// app/shop-owner/_layout.tsx
 import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import Toast from "react-native-toast-message";
 
-export default function RootLayout() {
+export default function ShopOwnerLayout() {
   return (
-    <>
-      <StatusBar style="dark" />
-      <Stack screenOptions={{ headerShown: false }} />
-      <Toast /> {/* ✅ Required for Toast.show() */}
-    </>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="ShopOwnerDashboard" />
+      <Stack.Screen name="ShopOwnerStaffTabs" />
+      <Stack.Screen name="ShopOwnerAddBarber" />
+      <Stack.Screen name="StaffList" />
+    </Stack>
   );
 }

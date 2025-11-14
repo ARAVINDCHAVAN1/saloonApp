@@ -3,9 +3,9 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { addDoc, collection, onSnapshot, query, where } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import { FlatList, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { db } from "../../firebaseConfig";
+import { db } from "../../src/firebase/firebaseConfig";
 import { colors } from "../../styles/theme";
-import BarberHeader from "./BarberHeader";
+
 
 export default function ApplyLeave() {
   const [tab, setTab] = useState<"apply" | "list">("apply");
@@ -88,7 +88,6 @@ export default function ApplyLeave() {
 
   return (
     <View style={{ flex: 1, backgroundColor: "#000" }}>
-      <BarberHeader />
 
       {/* Tab Switch */}
       <View style={{ flexDirection: "row", justifyContent: "center", marginTop: 20 }}>

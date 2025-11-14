@@ -1,102 +1,73 @@
-// app/staff/BarberDashboard.tsx
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createDrawerNavigator } from "@react-navigation/drawer";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { colors, dashboardStyles } from "../../styles/theme";
+import { ActivityIndicator, View } from "react-native";
+import { colors } from "../../styles/theme";
+
+import ApplyLeave from "./ApplyLeave";
+import Appointments from "./Appointments";
+import BarberBottomNav from "./BarberBottomNav";
 import BarberHeader from "./BarberHeader";
+import BarberHome from "./BarberHome";
+import BarberProfile from "./BarberProfile";
+import MySlots from "./MySlots";
+
+const Drawer = createDrawerNavigator();
+
+const ScreenWrapper = (Component: any) => {
+  return function WrappedScreen(props: any) {
+    return (
+      <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, paddingBottom: 75 }}>
+          <Component {...props} />
+        </View>
+        <BarberBottomNav />
+      </View>
+    );
+  };
+};
 
 export default function BarberDashboard() {
   const router = useRouter();
-  const [barberName, setBarberName] = useState("");
-  const [salonName, setSalonName] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  // 🔹 Load barber session data
   useEffect(() => {
-    const load = async () => {
-      try {
-        const name = await AsyncStorage.getItem("barberName");
-        const shop = await AsyncStorage.getItem("shopName");
-
-        if (!name) {
-          router.replace("/BarberLogin"); // redirect if no session
-          return;
-        }
-
-        setBarberName(name);
-        setSalonName(shop || "Salon");
-      } catch (e) {
-        console.error("Error loading barber session:", e);
-      }
-    };
-    load();
+    (async () => {
+      const id = await AsyncStorage.getItem("barberId");
+      if (!id) router.replace("/staff/BarberLogin");
+      setLoading(false);
+    })();
   }, []);
 
-  return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      {/* ✅ Top Header */}
-      <BarberHeader />
-
-      {/* ✅ Dashboard Content */}
-      <ScrollView
-        contentContainerStyle={{
-          paddingVertical: 20,
-          paddingHorizontal: 16,
+  if (loading) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "#fff",
         }}
       >
-   
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
-      
-        {/* --- My Appointments --- */}
-        <TouchableOpacity
-          style={dashboardStyles.card}
-          onPress={() => router.push("/staff/Appointments")}
-        >
-          <View style={dashboardStyles.iconBox}>
-            <Text style={{ fontSize: 22 }}>📅</Text>
-          </View>
-          <View style={dashboardStyles.textContainer}>
-            <Text style={dashboardStyles.cardTitle}>My Appointments</Text>
-            <Text style={dashboardStyles.cardValue}>
-              Check your upcoming bookings
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        {/* --- My Profile --- */}
-        <TouchableOpacity
-          style={dashboardStyles.card}
-          onPress={() => router.push("/staff/BarberProfile")}
-        >
-          <View style={dashboardStyles.iconBox}>
-            <Text style={{ fontSize: 22 }}>👤</Text>
-          </View>
-          <View style={dashboardStyles.textContainer}>
-            <Text style={dashboardStyles.cardTitle}>My Profile</Text>
-            <Text style={dashboardStyles.cardValue}>
-              Edit your personal details
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        {/* --- My Slots --- */}
-        <TouchableOpacity
-          style={dashboardStyles.card}
-          onPress={() => router.push("/staff/MySlots")}
-        >
-          <View style={dashboardStyles.iconBox}>
-            <Text style={{ fontSize: 22 }}>🕒</Text>
-          </View>
-          <View style={dashboardStyles.textContainer}>
-            <Text style={dashboardStyles.cardTitle}>My Slots</Text>
-            <Text style={dashboardStyles.cardValue}>
-              View your assigned time slots
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-      
-      </ScrollView>
-    </View>
+  return (
+    <Drawer.Navigator
+      screenOptions={{
+        header: () => <BarberHeader />,
+        drawerActiveTintColor: colors.primary,
+        drawerLabelStyle: { fontSize: 16 },
+      }}
+    >
+      <Drawer.Screen name="Home" component={ScreenWrapper(BarberHome)} />
+      <Drawer.Screen name="My Slots" component={ScreenWrapper(MySlots)} />
+      <Drawer.Screen name="Appointments" component={ScreenWrapper(Appointments)} />
+      <Drawer.Screen name="Apply Leave" component={ScreenWrapper(ApplyLeave)} />
+      <Drawer.Screen name="Profile" component={ScreenWrapper(BarberProfile)} />
+    </Drawer.Navigator>
   );
 }

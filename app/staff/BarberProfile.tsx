@@ -1,182 +1,174 @@
 // app/staff/BarberProfile.tsx
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as ImagePicker from "expo-image-picker";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
-    Alert,
-    Image,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  SafeAreaView,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import { db } from "../../firebaseConfig";
-import { staffEditStyles } from "../../styles/theme";
-import { uploadToCloudinary } from "../../utils/uploadToCloudinary";
-import BarberHeader from "./BarberHeader";
-
-const CATEGORIES = ["Men", "Women", "Spa"];
+import Toast from "react-native-toast-message";
+import { db } from "../../src/firebase/firebaseConfig";
+import { colors, commonStyles } from "../../styles/theme";
 
 export default function BarberProfile() {
-  const [barber, setBarber] = useState<any>(null);
-  const [imageUri, setImageUri] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [editMode, setEditMode] = useState(false);
 
+  // ✅ Independent fields (fixes keyboard closing)
+  const [id, setId] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [experience, setExperience] = useState("");
+  const [specialization, setSpecialization] = useState("");
+  const [password, setPassword] = useState("");
+
+  /* -------------------------------------------------------------
+      LOAD BARBER PROFILE
+  ------------------------------------------------------------- */
   useEffect(() => {
-    const load = async () => {
+    const loadData = async () => {
       const barberId = await AsyncStorage.getItem("barberId");
-      if (!barberId) return Alert.alert("Error", "No barber session found");
+      if (!barberId) return;
 
-      const ref = doc(db, "barbers", barberId);
-      const snap = await getDoc(ref);
-      if (snap.exists()) {
-        const data = { id: snap.id, ...snap.data() };
-        setBarber(data);
-        setImageUri(data.photoUrl || null);
-      }
+      const snap = await getDoc(doc(db, "barbers", barberId));
+      if (!snap.exists()) return;
+
+      const data = snap.data();
+
+      setId(barberId);
+      setName(data.name ?? "");
+      setEmail(data.email ?? "");
+      setPhone(data.phone ?? "");
+      setExperience(data.experience ?? "");
+      setSpecialization(data.specialization ?? "");
+      setPassword(data.password ?? "");
     };
-    load();
+
+    loadData();
   }, []);
 
-  const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert("Permission required", "Please allow photo access.");
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
-    });
-    if (!result.canceled) {
-      setImageUri(result.assets[0].uri);
-    }
-  };
-
+  /* -------------------------------------------------------------
+      UPDATE PROFILE
+  ------------------------------------------------------------- */
   const updateProfile = async () => {
-    if (!barber) return;
     try {
-      setUploading(true);
-
-      let photoUrl = barber.photoUrl;
-      if (imageUri && imageUri !== barber.photoUrl) {
-        photoUrl = await uploadToCloudinary(imageUri);
-      }
-
-      await updateDoc(doc(db, "barbers", barber.id), {
-        name: barber.name,
-        experience: barber.experience,
-        specialization: barber.specialization,
-        password: barber.password,
-        photoUrl,
+      await updateDoc(doc(db, "barbers", id), {
+        name,
+        email,
+        phone,
+        experience,
+        specialization,
+        password,
       });
 
-      Alert.alert("✅ Profile updated successfully!");
+      Toast.show({
+        type: "success",
+        text1: "Profile Updated ✅",
+      });
+
+      setEditMode(false);
     } catch (err) {
-      console.error(err);
-      Alert.alert("❌ Error updating profile");
-    } finally {
-      setUploading(false);
+      Toast.show({
+        type: "error",
+        text1: "Update Failed ❌",
+      });
     }
   };
 
-  if (!barber)
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text style={{ color: "#fff" }}>Loading profile...</Text>
-      </View>
-    );
+  // ✅ REUSABLE FIELD COMPONENT
+  const Field = ({ label, value, onChangeText }) => (
+    <View style={{ marginBottom: 25 }}>
+      <Text style={{ fontSize: 14, color: "#777", marginBottom: 4 }}>
+        {label}
+      </Text>
+
+      {!editMode ? (
+        <Text style={{ fontSize: 18, color: "#222", fontWeight: "500" }}>
+          {value || "—"}
+        </Text>
+      ) : (
+        <TextInput
+          style={{
+            borderWidth: 1,
+            borderColor: "#ccc",
+            borderRadius: 10,
+            paddingVertical: 10,
+            paddingHorizontal: 14,
+            fontSize: 16,
+            backgroundColor: "#fff",
+          }}
+          value={value}
+          onChangeText={onChangeText}
+        />
+      )}
+    </View>
+  );
 
   return (
-    <View style={staffEditStyles.screen}>
-      <BarberHeader />
-      <ScrollView contentContainerStyle={staffEditStyles.container}>
-        {/* Profile Image */}
-        <TouchableOpacity onPress={pickImage} style={staffEditStyles.imageBox}>
-          {imageUri ? (
-            <Image source={{ uri: imageUri }} style={staffEditStyles.image} />
-          ) : (
-            <Text style={staffEditStyles.imagePlaceholder}>Pick Profile Image</Text>
-          )}
-        </TouchableOpacity>
-
-        {/* Name */}
-        <TextInput
-          value={barber.name}
-          onChangeText={(t) => setBarber({ ...barber, name: t })}
-          placeholder="Barber Name"
-          style={staffEditStyles.input}
-        />
-
-        {/* Experience */}
-        <TextInput
-          value={barber.experience}
-          onChangeText={(t) => setBarber({ ...barber, experience: t })}
-          placeholder="Experience (e.g. 5 years)"
-          style={staffEditStyles.input}
-        />
-
-        {/* Password + Toggle */}
-        <View style={{ position: "relative", width: "100%" }}>
-          <TextInput
-            value={barber.password}
-            onChangeText={(t) => setBarber({ ...barber, password: t })}
-            placeholder="Password"
-            secureTextEntry={!showPassword}
-            style={[staffEditStyles.input, { paddingRight: 40 }]}
-          />
-          <TouchableOpacity
-            onPress={() => setShowPassword(!showPassword)}
-            style={{ position: "absolute", right: 10, top: 18 }}
-          >
-            <Icon
-              name={showPassword ? "eye-off" : "eye"}
-              size={22}
-              color="#777"
-            />
-          </TouchableOpacity>
-        </View>
-
-        {/* Specialization */}
-        <View style={staffEditStyles.chipContainer}>
-          {CATEGORIES.map((c) => {
-            const active = c === barber.specialization;
-            return (
-              <TouchableOpacity
-                key={c}
-                onPress={() => setBarber({ ...barber, specialization: c })}
-                style={[staffEditStyles.chip, active && staffEditStyles.chipActive]}
-              >
-                <Text
-                  style={[
-                    staffEditStyles.chipText,
-                    active && staffEditStyles.chipTextActive,
-                  ]}
-                >
-                  {c}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* Save */}
-        <TouchableOpacity
-          style={[staffEditStyles.saveBtn, uploading && { opacity: 0.6 }]}
-          onPress={updateProfile}
-          disabled={uploading}
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 20, paddingBottom: 140 }}
+      >
+        {/* ✅ Title */}
+        <Text
+          style={{
+            fontSize: 26,
+            fontWeight: "700",
+            color: colors.primary,
+            textAlign: "center",
+            marginBottom: 25,
+          }}
         >
-          <Text style={staffEditStyles.saveBtnText}>
-            {uploading ? "Updating..." : "Save Changes"}
-          </Text>
-        </TouchableOpacity>
+          Barber Profile
+        </Text>
+
+        {/* ✅ Fields */}
+        <Field label="Name" value={name} onChangeText={setName} />
+        <Field label="Email" value={email} onChangeText={setEmail} />
+        <Field label="Phone" value={phone} onChangeText={setPhone} />
+        <Field label="Experience" value={experience} onChangeText={setExperience} />
+        <Field
+          label="Specialization"
+          value={specialization}
+          onChangeText={setSpecialization}
+        />
+        <Field label="Password" value={password} onChangeText={setPassword} />
       </ScrollView>
-    </View>
+
+      {/* ✅ Buttons (Edit / Save) */}
+      <View
+        style={{
+          padding: 20,
+          backgroundColor: "#fff",
+          borderTopWidth: 1,
+          borderColor: "#eee",
+        }}
+      >
+        {!editMode ? (
+          <TouchableOpacity
+            style={[commonStyles.button, { backgroundColor: colors.primary }]}
+            onPress={() => setEditMode(true)}
+          >
+            <Text style={commonStyles.buttonText}>Edit Profile</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={[commonStyles.button, { backgroundColor: colors.primary }]}
+            onPress={updateProfile}
+          >
+            <Text style={commonStyles.buttonText}>Save Changes</Text>
+          </TouchableOpacity>
+        )}
+
+        
+      </View>
+
+      <Toast />
+    </SafeAreaView>
   );
 }

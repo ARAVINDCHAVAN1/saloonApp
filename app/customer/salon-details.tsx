@@ -14,62 +14,62 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  Linking,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import { db } from "../../firebaseConfig";
+import MapView, { Marker } from "react-native-maps";
+import { db } from "../../src/firebase/firebaseConfig";
 import { colors, salonDetailsStyles as styles } from "../../styles/theme";
 import CustomerBottomNav from "./CustomerBottomNav";
 
 export default function SalonDetails() {
-  const { id } = useLocalSearchParams(); // salonId
+  const { id } = useLocalSearchParams();
   const router = useRouter();
 
   const [salon, setSalon] = useState<any>(null);
   const [gallery, setGallery] = useState<string[]>([]);
-  const [menuCard, setMenuCard] = useState<string[]>([]);
   const [menuItems, setMenuItems] = useState<any[]>([]);
   const [barbers, setBarbers] = useState<any[]>([]);
+  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
-  // ✅ Fetch salon data
+  // ✅ Fetch salon details
   useEffect(() => {
     const fetchSalonDetails = async () => {
       try {
         if (!id) return;
 
-        // 🔹 Fetch salon
         const salonRef = doc(collection(db, "salons"), id as string);
         const salonSnap = await getDoc(salonRef);
         let salonData: any = null;
-        if (salonSnap.exists())
-          salonData = { id: salonSnap.id, ...salonSnap.data() };
+        if (salonSnap.exists()) salonData = { id: salonSnap.id, ...salonSnap.data() };
 
-        // 🔹 Fetch gallery and menu cards
+        // 🔹 Fetch gallery & location
         const galSnap = await getDocs(
           query(collection(db, "galleries"), where("salonId", "==", id))
         );
 
         const galleryList: string[] = [];
         let mainShopPic: string | null = null;
-        let menuCardImages: string[] = [];
+        let loc: any = null;
 
         galSnap.forEach((g) => {
           const data = g.data();
           if (Array.isArray(data.gallery)) galleryList.push(...data.gallery);
           if (data.shopPic) mainShopPic = data.shopPic;
-          if (Array.isArray(data.menuCards)) menuCardImages.push(...data.menuCards);
+          if (data.location) loc = data.location;
         });
 
         if (mainShopPic) salonData = { ...salonData, shopPic: mainShopPic };
+        if (loc) setLocation(loc);
 
         setSalon(salonData);
         setGallery(galleryList);
-        setMenuCard(menuCardImages);
 
         // 🔹 Fetch barbers
         const barberSnap = await getDocs(
@@ -115,83 +115,74 @@ export default function SalonDetails() {
         setLoading(false);
       }
     };
-
     fetchSalonDetails();
   }, [id]);
 
-  // ✅ Search filters
+  // ✅ Filters (Search only)
   const filteredBarbers = useMemo(() => {
-    if (!search) return barbers;
-    const term = search.toLowerCase();
-    return barbers.filter(
-      (b) =>
-        b.name.toLowerCase().includes(term) ||
-        b.specialization.toLowerCase().includes(term)
-    );
+    let list = barbers;
+    if (search)
+      list = list.filter(
+        (b) =>
+          b.name.toLowerCase().includes(search.toLowerCase()) ||
+          b.specialization.toLowerCase().includes(search.toLowerCase())
+      );
+    return list;
   }, [search, barbers]);
 
   const filteredServices = useMemo(() => {
-    if (!search) return menuItems;
-    const term = search.toLowerCase();
-    return menuItems.filter((s) => s.name.toLowerCase().includes(term));
+    let list = menuItems;
+    if (search)
+      list = list.filter((s) =>
+        s.name.toLowerCase().includes(search.toLowerCase())
+      );
+    return list;
   }, [search, menuItems]);
+
+  // ✅ Google Maps
+  const openInGoogleMaps = () => {
+    if (!location) return;
+    const { latitude, longitude } = location;
+    Linking.openURL(
+      `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`
+    );
+  };
+
+  // ✅ Booking
+  const goToBookingPage = async () => {
+    const storedCustomer = await AsyncStorage.getItem("customer");
+    if (!storedCustomer) {
+      alert("Please log in first!");
+      router.push("/CustomerLogin");
+      return;
+    }
+    const customer = JSON.parse(storedCustomer);
+    router.push(`/customer/salon-booking?salonId=${salon.id}&userId=${customer.id}`);
+  };
 
   if (loading)
     return (
-      <ActivityIndicator
-        size="large"
-        color={colors.primary}
-        style={{ marginTop: 50 }}
-      />
+      <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 50 }} />
     );
-
-  if (!salon)
-    return (
-      <Text style={{ textAlign: "center", color: "#777", marginTop: 20 }}>
-        Salon not found.
-      </Text>
-    );
-
-  // ✅ Go to booking page and pass userId + salonId
-  const goToBookingPage = async () => {
-    try {
-      const storedCustomer = await AsyncStorage.getItem("customer");
-      if (!storedCustomer) {
-        alert("Please log in first!");
-        router.push("/CustomerLogin");
-        return;
-      }
-
-      const customer = JSON.parse(storedCustomer);
-      const userId = customer.id;
-
-      router.push(`/customer/salon-booking?salonId=${salon.id}&userId=${userId}`);
-    } catch (err) {
-      console.error("❌ Navigation Error:", err);
-    }
-  };
 
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }}>
-      {/* 🔹 Header with search */}
+      {/* 🔹 Header */}
       <View
         style={{
-          flexDirection: "row",
-          alignItems: "center",
           backgroundColor: colors.primary,
           paddingHorizontal: 15,
           paddingTop: 45,
           paddingBottom: 12,
         }}
       >
+        {/* 🔍 Search Bar */}
         <View
           style={{
             flexDirection: "row",
             alignItems: "center",
             backgroundColor: "#fff",
             borderRadius: 8,
-            flex: 1,
-            marginRight: 10,
             paddingHorizontal: 10,
           }}
         >
@@ -204,27 +195,11 @@ export default function SalonDetails() {
             style={{ flex: 1, color: "#000", marginLeft: 8 }}
           />
         </View>
-
-        <TouchableOpacity onPress={() => router.push("/customer/cart")}>
-          <Ionicons
-            name="cart-outline"
-            size={24}
-            color="#000"
-            style={{ marginRight: 15 }}
-          />
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => router.push("/customer/profile")}>
-          <Ionicons name="settings-outline" size={24} color="#000" />
-        </TouchableOpacity>
       </View>
 
       {/* 🔹 Main Content */}
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100 }}
-      >
-        {/* 🌟 Hero Section */}
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+        {/* Hero Section */}
         <View style={styles.heroContainer}>
           <Image
             source={{
@@ -247,72 +222,57 @@ export default function SalonDetails() {
           </View>
         </View>
 
-        {/* 📸 Gallery */}
+        {/* 📸 Gallery Section */}
         {gallery.length > 0 && (
-          <>
-            <View style={{ height: 25 }} />
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Gallery</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {gallery.map((img, index) => (
-                  <Image
-                    key={index}
-                    source={{ uri: img }}
-                    style={styles.galleryImage}
-                  />
-                ))}
-              </ScrollView>
-            </View>
-          </>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Gallery</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {gallery.map((img, index) => (
+                <Image
+                  key={index}
+                  source={{ uri: img }}
+                  style={{
+                    width: 120,
+                    height: 120,
+                    borderRadius: 10,
+                    marginRight: 10,
+                  }}
+                />
+              ))}
+            </ScrollView>
+          </View>
         )}
 
         {/* 💈 Barbers */}
-        <View style={[styles.section, { marginTop: 15 }]}>
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Our Barbers</Text>
           {filteredBarbers.length === 0 ? (
-            <Text style={styles.emptyText}>No matching barbers found.</Text>
+            <Text style={styles.emptyText}>No barbers found.</Text>
           ) : (
             <View style={styles.barberGrid}>
               {filteredBarbers.map((barber) => (
-                <TouchableOpacity
-                  key={barber.id}
-                  style={styles.barberProfileCard}
-                  activeOpacity={0.9}
-                >
-                  <LinearGradient
-                    colors={["#fff", "#f7f7f7"]}
-                    style={styles.barberGradient}
-                  >
-                    <Image
-                      source={{ uri: barber.profilePic }}
-                      style={styles.barberProfileImg}
-                    />
+                <View key={barber.id} style={styles.barberProfileCard}>
+                  <LinearGradient colors={["#fff", "#f7f7f7"]} style={styles.barberGradient}>
+                    <Image source={{ uri: barber.profilePic }} style={styles.barberProfileImg} />
                     <Text style={styles.barberProfileName}>{barber.name}</Text>
-                    <Text
-                      style={{
-                        color: "#777",
-                        fontSize: 12,
-                        marginBottom: 4,
-                        textAlign: "center",
-                      }}
-                    >
+                    <Text style={{ color: "#777", fontSize: 12, marginBottom: 4, textAlign: "center" }}>
                       {barber.specialization}
                     </Text>
                     <View style={styles.barberChipRow}>
                       <Text style={styles.barberChip}>{barber.experience}</Text>
                     </View>
                   </LinearGradient>
-                </TouchableOpacity>
+                </View>
               ))}
             </View>
           )}
         </View>
 
         {/* 💇 Services */}
-        <View style={[styles.section, { marginTop: 10 }]}>
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Our Services</Text>
           {filteredServices.length === 0 ? (
-            <Text style={styles.emptyText}>No matching services found.</Text>
+            <Text style={styles.emptyText}>No services found.</Text>
           ) : (
             filteredServices.map((service) => (
               <View key={service.id} style={styles.serviceCard}>
@@ -323,55 +283,39 @@ export default function SalonDetails() {
           )}
         </View>
 
-        {/* 📜 Menu Card */}
-        {menuCard.length > 0 && (
-          <View style={[styles.section, { marginTop: 10 }]}>
-            <Text style={styles.sectionTitle}>Menu Card</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {menuCard.map((img, index) => (
-                <View key={index} style={styles.menuCardContainer}>
-                  <Image
-                    source={{ uri: img }}
-                    style={styles.menuCardImage}
-                    resizeMode="cover"
-                  />
-                </View>
-              ))}
-            </ScrollView>
+        {/* 🗺️ Map */}
+        {location && (
+          <View style={{ marginTop: 20, paddingHorizontal: 20 }}>
+            <Text style={styles.sectionTitle}>Find Us on Map</Text>
+            <TouchableOpacity activeOpacity={0.9} onPress={openInGoogleMaps}>
+              <MapView
+                style={{
+                  height: 250,
+                  borderRadius: 12,
+                  overflow: "hidden",
+                  marginTop: 10,
+                }}
+                initialRegion={{
+                  latitude: location.latitude,
+                  longitude: location.longitude,
+                  latitudeDelta: 0.01,
+                  longitudeDelta: 0.01,
+                }}
+              >
+                <Marker
+                  coordinate={{
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                  }}
+                  title={salon.shopName}
+                  description="Tap to open Google Maps"
+                />
+              </MapView>
+            </TouchableOpacity>
           </View>
         )}
-
-        {/* 🟡 Bottom Book Button */}
-        <TouchableOpacity
-          style={{
-            backgroundColor: colors.primary,
-            paddingVertical: 12,
-            borderRadius: 10,
-            marginHorizontal: 20,
-            alignItems: "center",
-            marginTop: 25,
-            marginBottom: 30,
-            shadowColor: "#000",
-            shadowOpacity: 0.1,
-            shadowRadius: 4,
-            elevation: 3,
-          }}
-          onPress={goToBookingPage}
-        >
-          <Text
-            style={{
-              color: "#fff",
-              fontWeight: "600",
-              fontSize: 15,
-              marginTop: 4,
-            }}
-          >
-            Book Appointment
-          </Text>
-        </TouchableOpacity>
       </ScrollView>
 
-      {/* ✅ Bottom Navigation */}
       <CustomerBottomNav />
     </View>
   );
