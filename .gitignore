@@ -1,0 +1,22 @@
+# dependencies
+node_modules/
+
+# expo
+.expo/
+dist/
+web-build/
+
+# android / ios
+android/
+ios/
+
+# env & keys
+.env
+google-services.json
+*.jks
+
+# backups & junk
+backup/
+*.zip
+_nm/
+node-server/
